@@ -1,0 +1,49 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: bigip02-ctlr
+  namespace: kube-system
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: k8s-bigip-ctlr1
+      labels:
+        app: k8s-bigip-ctlr1
+    spec:
+      serviceAccountName: bigip-ctlr
+      containers:
+        - name: k8s-bigip-ctlr
+          image: "f5networks/k8s-bigip-ctlr:latest"
+          env:
+            - name: BIGIP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: bigip-login
+                  key: username
+            - name: BIGIP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: bigip-login
+                  key: password
+          command: ["/app/bin/k8s-bigip-ctlr"]
+          args: [
+            "--bigip-username=$(BIGIP_USERNAME)",
+            "--bigip-password=$(BIGIP_PASSWORD)",
+            "--bigip-url=10.10.200.99",
+            "--bigip-partition=ocp",
+            "--pool-member-type=cluster",
+            "--manage-routes=true",
+            "--node-poll-interval=5",
+            "--verify-interval=5",
+	    "--namespace=demoproj",
+	    "--namespace=yelb",
+	    "--namespace=guestbook",
+	    "--namespace=f5demo",
+            "--route-vserver-addr=10.10.201.120",
+            "--route-http-vserver=ocp-vserver",
+            "--route-https-vserver=ocp-https-vserver",
+            "--openshift-sdn-name=/Common/ocp-tunnel"
+          ]
+      imagePullSecrets:
+        - name: f5-docker-images
