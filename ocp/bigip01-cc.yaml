@@ -15,21 +15,9 @@ spec:
       containers:
         - name: k8s-bigip-ctlr
           image: "f5networks/k8s-bigip-ctlr:latest"
-          env:
-            - name: BIGIP_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: bigip-login
-                  key: username
-            - name: BIGIP_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: bigip-login
-                  key: password
           command: ["/app/bin/k8s-bigip-ctlr"]
           args: [
-            "--bigip-username=$(BIGIP_USERNAME)",
-            "--bigip-password=$(BIGIP_PASSWORD)",
+            "--credentials-directory=/tmp/creds",
             "--bigip-url=10.10.200.98",
             "--bigip-partition=ocp",
             "--pool-member-type=cluster",
@@ -45,5 +33,13 @@ spec:
             "--route-https-vserver=ocp-https-vserver",
             "--openshift-sdn-name=/Common/ocp-tunnel"
           ]
+          volumeMounts:
+          - name: bigip-creds
+            mountPath: "/tmp/creds"
+            readOnly: true
+      volumes:
+      - name: bigip-creds
+        secret:
+          secretName: bigip-login
       imagePullSecrets:
         - name: f5-docker-images
